@@ -1,0 +1,141 @@
+CopyToCustomColors: Copy to custom colors
+
+ColoredDamageTypesPreset: {
+	CustomColorData: Custom Colors
+	DefaultColorData: Default Colors
+}
+
+Configs: {
+	ColoredDamageTypesReduxConfig: {
+		DisplayName: Colored Damage Types Redux Config
+
+		options: {
+			Label: Options
+			Tooltip: ""
+		}
+	}
+
+	ColoredDamageTypesOptions: {
+		Tooltip: ""
+
+		selectedPreset: {
+			Label: Selected Preset
+			Tooltip: ""
+		}
+
+		CustomColors: {
+			Label: Custom Colors
+			Tooltip: ""
+		}
+
+		applyToTooltips: {
+			Label: apply To Tooltips
+			Tooltip: ""
+		}
+	}
+
+	ColorDataDefinition: {
+		Tooltip: ""
+
+		IsUnloaded: {
+			Label: Is Unloaded
+			Tooltip: ""
+		}
+
+		FullName: {
+			Label: Full Name
+			Tooltip: ""
+		}
+
+		ColorData: {
+			Label: Color Data
+			Tooltip: ""
+		}
+
+		DisplayName: {
+			Label: Display Name
+			Tooltip: ""
+		}
+
+		ShowInternalName: {
+			Label: Show Internal Name
+			Tooltip: ""
+		}
+	}
+
+	ColorData: {
+		Tooltip: ""
+
+		interpolated: {
+			Label: Interpolated
+			Tooltip: ""
+		}
+
+		priorityOrder: {
+			Label: Priority Order
+			Tooltip: ""
+		}
+
+		ColorSet: {
+			Label: Color Set
+			Tooltip: ""
+		}
+
+		FullName: {
+			Label: Full Name
+			Tooltip: ""
+		}
+
+		DisplayName: {
+			Label: Display Name
+			Tooltip: ""
+		}
+
+		ReadOnly: {
+			Label: Read Only
+			Tooltip: ""
+		}
+	}
+
+	"DamageClassDefinition[].Tooltip": ""
+
+	DamageClassDefinition: {
+		Tooltip: ""
+
+		IsUnloaded: {
+			Label: Is Unloaded
+			Tooltip: ""
+		}
+
+		FullName: {
+			Label: Full Name
+			Tooltip: ""
+		}
+
+		DamageClass: {
+			Label: Damage Class
+			Tooltip: ""
+		}
+
+		DisplayName: {
+			Label: Display Name
+			Tooltip: ""
+		}
+	}
+
+	DamageTypeData: {
+		Tooltip: ""
+
+		HitColor: {
+			Label: Hit Color
+			Tooltip: ""
+		}
+
+		CritColor: {
+			Label: Crit Color
+			Tooltip: ""
+		}
+	}
+
+	CustomColorData.Tooltip: ""
+}

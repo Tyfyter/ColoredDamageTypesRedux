@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36401.2 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ColoredDamageTypesRedux", "ColoredDamageTypesRedux.csproj", "{831C9B75-7478-E51A-4029-D8CA0B4F4670}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{831C9B75-7478-E51A-4029-D8CA0B4F4670}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{831C9B75-7478-E51A-4029-D8CA0B4F4670}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{831C9B75-7478-E51A-4029-D8CA0B4F4670}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{831C9B75-7478-E51A-4029-D8CA0B4F4670}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {201E6C9C-F5D9-4991-98D5-1F7C972E3012}
+	EndGlobalSection
+EndGlobal

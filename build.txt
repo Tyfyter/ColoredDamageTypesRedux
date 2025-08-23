@@ -1,0 +1,5 @@
+displayName = Colored Damage Types Redux
+author = Moonlight Glint
+version = 1.0
+modReferences = PegasusLib
+side = Client

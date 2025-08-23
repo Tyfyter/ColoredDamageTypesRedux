@@ -1,0 +1,1 @@
+Colored Damage Types has been abandoned and needs edits to its code in order to work with basic tML features, so I made this.
