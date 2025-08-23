@@ -163,7 +163,7 @@ namespace ColoredDamageTypesRedux {
 				}
 			} else {
 				DamageClassDefinition parent = priorityOrder.FirstOrDefault(d => !d.IsUnloaded && damageClass.CountsAsClass(d.DamageClass));
-				if (parent is not null && GetColor(damageClass, crit) is Color color) return color;
+				if (parent is not null && GetColor(parent.DamageClass, crit) is Color color) return color;
 			}
 			return null;
 		}
