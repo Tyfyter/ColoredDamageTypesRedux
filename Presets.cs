@@ -11,10 +11,11 @@ using Terraria.ModLoader.IO;
 namespace ColoredDamageTypesRedux {
 	public class DefaultColorData : ColorData {
 		public DefaultColorData() {
-			ColorSet[DamageClass.Melee] = new(Color.Firebrick, Color.Red);
-			ColorSet[DamageClass.Ranged] = new(Color.SeaGreen, Color.Lime);
-			ColorSet[DamageClass.Magic] = new(Color.DodgerBlue, Color.Blue);
-			ColorSet[DamageClass.Summon] = new(Color.Goldenrod, Color.Orange);
+			ColorSet[DamageClass.Melee] = new(new(254, 121, 2), new(253, 62, 3));
+			ColorSet[DamageClass.Ranged] = new(new(34, 221, 151), new(33, 160, 141));
+			ColorSet[DamageClass.Magic] = new(new(254, 126, 229), new(255, 31, 174));
+			ColorSet[DamageClass.Summon] = new(new(136, 226, 255), new(14, 154, 230));
+			ColorSet[DamageClass.Throwing] = new(new(161, 114, 74), new(175, 165, 103));
 		}
 	}
 	[Autoload(false)]
