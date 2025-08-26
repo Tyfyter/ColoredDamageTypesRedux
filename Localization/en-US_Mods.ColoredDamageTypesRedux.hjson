@@ -3,12 +3,12 @@ CopyToCustomColors: Copy to custom colors
 ColoredDamageTypesPreset: {
 	CustomColorData: Custom Colors
 	DefaultColorData: Default Colors
-	PillarsPreset: PillarsPreset
+	PillarsPreset: Pillars Preset
 }
 
 Configs: {
 	ColoredDamageTypesReduxConfig: {
-		DisplayName: Colored Damage Types Redux Config
+		DisplayName: Config
 
 		options: {
 			Label: Options
@@ -19,7 +19,7 @@ Configs: {
 	ColoredDamageTypesOptions: {
 		Tooltip: ""
 
-		selectedPreset: {
+		SelectedPreset: {
 			Label: Selected Preset
 			Tooltip: ""
 		}
@@ -30,7 +30,24 @@ Configs: {
 		}
 
 		applyToTooltips: {
-			Label: apply To Tooltips
+			Label: Apply To Tooltips
+			Tooltip: ""
+		}
+
+		selectedPreset: {
+			Label: selected Preset
+			Tooltip: ""
+		}
+	}
+
+	ColoredDamageTypesOptionsConfigElement: {
+		SelectedPreset: {
+			Label: Selected Preset
+			Tooltip: ""
+		}
+
+		ApplyToTooltips: {
+			Label: Apply To Tooltips
 			Tooltip: ""
 		}
 	}

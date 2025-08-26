@@ -1,4 +1,4 @@
-displayName = Colored Damage Types Redux
+displayName = [c/fd0a03:Colored] [c/22dd65:Damage] [c/0091ff:Types] [c/ffb700:Redux]
 author = Moonlight Glint
 version = 1.0
 modReferences = PegasusLib
