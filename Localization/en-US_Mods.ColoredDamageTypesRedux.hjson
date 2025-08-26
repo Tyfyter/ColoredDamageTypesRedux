@@ -3,6 +3,7 @@ CopyToCustomColors: Copy to custom colors
 ColoredDamageTypesPreset: {
 	CustomColorData: Custom Colors
 	DefaultColorData: Default Colors
+	PillarsPreset: PillarsPreset
 }
 
 Configs: {

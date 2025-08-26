@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
+using PegasusLib.Config;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,6 +13,14 @@ namespace ColoredDamageTypesRedux {
 	public class DefaultColorData : ColorData {
 		public DefaultColorData() {
 			ColorSet[DamageClass.Melee] = new(new(254, 121, 2), new(253, 62, 3));
+			ColorSet[DamageClass.Ranged] = new(new(33, 160, 101), new(34, 221, 101));
+			ColorSet[DamageClass.Magic] = new(new(61, 142, 204), new(0, 145, 255));
+			ColorSet[DamageClass.Summon] = new(new(179, 150, 36), new(255, 183, 0));
+		}
+	}
+	public class PillarsPreset : ColorData {
+		public PillarsPreset() {
+			ColorSet[DamageClass.Melee] = new(new(254, 121, 2), new(253, 62, 3));
 			ColorSet[DamageClass.Ranged] = new(new(34, 221, 151), new(33, 160, 141));
 			ColorSet[DamageClass.Magic] = new(new(254, 126, 229), new(255, 31, 174));
 			ColorSet[DamageClass.Summon] = new(new(136, 226, 255), new(14, 154, 230));
@@ -20,7 +29,11 @@ namespace ColoredDamageTypesRedux {
 	}
 	[Autoload(false)]
 	public class ExternalColorData : ColorData {
-		public ExternalColorData(Dictionary<string, (Color hitColor, Color critColor)> colors) {
+		string name;
+		public override string Name => name;
+		public ExternalColorData(Mod mod, string name, Dictionary<string, (Color hitColor, Color critColor)> colors) {
+			Mod = mod;
+			this.name = name;
 			foreach (KeyValuePair<string, (Color hitColor, Color critColor)> item in colors) {
 				ColorSet[new(item.Key)] = new(item.Value.hitColor, item.Value.critColor);
 			}
@@ -70,6 +83,6 @@ namespace ColoredDamageTypesRedux {
 				yield return new(id);
 			}
 		}
-		public bool ShowInternalName => false;
+		public static bool ShowInternalName => false;
 	}
 }

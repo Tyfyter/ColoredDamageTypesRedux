@@ -3,12 +3,14 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
 using Newtonsoft.Json;
 using PegasusLib;
+using PegasusLib.Config;
 using ReLogic.Content;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -46,7 +48,8 @@ namespace ColoredDamageTypesRedux {
 		public override object Call(params object[] args) {
 			switch (Enum.Parse<Calls>(args[0].ToString())) {
 				case Calls.AddPreset:
-				loadedColorDatas.Add((string)args[1], new ExternalColorData((Dictionary<string, (Color hitColor, Color critColor)>)args[2]));
+				ExternalColorData externalColorData = new((Mod)args[1], (string)args[2], (Dictionary<string, (Color hitColor, Color critColor)>)args[3]);
+				loadedColorDatas.Add(externalColorData.FullName, externalColorData);
 				break;
 				case Calls.AddToPreset:
 				loadedColorDatas[(string)args[1]].ColorSet[new DamageClassDefinition((string)args[2])] = new((Color)args[3], (Color)args[4]);
@@ -116,8 +119,11 @@ namespace ColoredDamageTypesRedux {
 		public Mod Mod { get; protected set; }
 		[JsonIgnore]
 		public virtual string Name => GetType().Name;
+		[JsonIgnore]
 		public string FullName => $"{Mod.Name}/{Name}";
+		[JsonIgnore]
 		public LocalizedText DisplayName => Mod.GetLocalization("ColoredDamageTypesPreset." + Name, () => Name);
+		[JsonIgnore]
 		public virtual bool ReadOnly => true;
 		public bool interpolated = true;
 		public DamageClassDefinition[] priorityOrder = [];
@@ -289,12 +295,13 @@ namespace ColoredDamageTypesRedux {
 				}
 			}
 		}
+		PropertyFieldWrapper GetProperty(string name) => new(GetType().GetProperty(name).WithCanWrite(MemberInfo.CanWrite));
 		protected void SetupList() {
 			if (ValueChanged) Value.SelectedColorSet.ValidatePriorityOrder();
 			list.Clear();
 			int index = 0;
-			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(ApplyToTooltips))), this, index++);
-			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(SelectedPreset))), this, index++);
+			ConfigManager.WrapIt(list, ref height, GetProperty(nameof(ApplyToTooltips)), this, index++);
+			ConfigManager.WrapIt(list, ref height, GetProperty(nameof(SelectedPreset)), this, index++);
 			foreach (KeyValuePair<DamageClassDefinition, DamageTypeData> color in Value.SelectedColorSet.ColorSet) {
 				ColorsElement colorsElement = new(color.Key, color.Value, Value.SelectedColorSet.ReadOnly);
 				colorsElement.Top.Pixels += height;
@@ -303,7 +310,7 @@ namespace ColoredDamageTypesRedux {
 				DamageClassDefinition origKey = color.Key;
 				if (!SelectedColorSet.ReadOnly) colorsElement.SetValue += (@class, colors) => {
 					ChangedValue.SelectedColorSet.ColorSet.Remove(origKey);
-					ChangedValue.SelectedColorSet.ColorSet.Add(@class, colors);
+					if (@class is not null && colors is not null) ChangedValue.SelectedColorSet.ColorSet.Add(@class, colors);
 					SelectedColorSet.ValidatePriorityOrder();
 				};
 				index++;
@@ -322,9 +329,9 @@ namespace ColoredDamageTypesRedux {
 				list.Add(addButton);
 				index++;
 			}
-			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(Interpolated))), this, index++);
+			ConfigManager.WrapIt(list, ref height, GetProperty(nameof(Interpolated)), this, index++);
 			if (!Interpolated) {
-				PropertyFieldWrapper memberInfo = new(GetType().GetProperty(nameof(PriorityOrder)));
+				PropertyFieldWrapper memberInfo = GetProperty(nameof(PriorityOrder));
 				ConfigManager.WrapIt(list, ref height, memberInfo, this, index++);
 			}
 			if (SelectedColorSet.ReadOnly) {

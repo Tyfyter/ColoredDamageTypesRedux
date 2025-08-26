@@ -1,5 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Newtonsoft.Json.Linq;
+using PegasusLib.Config;
 using ReLogic.Content;
 using System;
 using System.Collections.Generic;
@@ -13,61 +15,50 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.ID;
+using Terraria.Localization;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Config.UI;
+using Terraria.ModLoader.UI;
 using Terraria.UI;
 using Terraria.UI.Chat;
+using static ColoredDamageTypesRedux.ColoredDamageTypesOptionsConfigElement;
 
 namespace ColoredDamageTypesRedux {
 	public class ColorsElement : UIElement {
 		public class ColorObject(PropertyFieldWrapper memberInfo, object item, ColorsElement colorsElement) {
-
 			public Color current = (Color)memberInfo.GetValue(item);
-
 			[LabelKey("$Config.Color.Red.Label")]
 			public byte R {
-				get {
-					return current.R;
-				}
+				get => current.R;
 				set {
 					current.R = value;
 					Update();
 				}
 			}
-
 			[LabelKey("$Config.Color.Green.Label")]
 			public byte G {
-				get {
-					return current.G;
-				}
+				get => current.G;
 				set {
 					current.G = value;
 					Update();
 				}
 			}
-
 			[LabelKey("$Config.Color.Blue.Label")]
 			public byte B {
-				get {
-					return current.B;
-				}
+				get => current.B;
 				set {
 					current.B = value;
 					Update();
 				}
 			}
-
 			[LabelKey("$Config.Color.Alpha.Label")]
 			public byte A {
-				get {
-					return current.A;
-				}
+				get => current.A;
 				set {
 					current.A = value;
 					Update();
 				}
 			}
-
 			public void Update() {
 				memberInfo.SetValue(item, current);
 				colorsElement.UpdateValue();
@@ -78,7 +69,7 @@ namespace ColoredDamageTypesRedux {
 
 		DamageClassDefinition type;
 		DamageTypeData data;
-		[ValueFilter<DamageClassDefinition>(typeof(ColorsElement), nameof(IsValidDamageClass))]
+		[DisplayConfigValuesFilter<DamageClassDefinition>(typeof(ColorsElement), nameof(IsValidDamageClass)), CustomModConfigItem<DamageClassOnLeftElement>]
 		public DamageClassDefinition Type {
 			get => type;
 			set {
@@ -100,11 +91,10 @@ namespace ColoredDamageTypesRedux {
 		int startHeight;
 		UIList list;
 		bool readOnly;
+		public bool opened = false;
+		UIElement deleteButton;
 		PropertyFieldWrapper GetProperty(string name) => WithAppropriateWriting(GetType().GetProperty(name));
-		public PropertyFieldWrapper WithAppropriateWriting(PropertyInfo info) {
-			if (readOnly) info = new ReadOnlyPropertyInfo(info);
-			return new(info);
-		}
+		public PropertyFieldWrapper WithAppropriateWriting(PropertyInfo info) => new(info.WithCanWrite(!readOnly));
 		public ColorsElement(DamageClassDefinition type, DamageTypeData damageTypeData, bool readOnly) {
 			this.readOnly = readOnly;
 			this.type = new(type.FullName);
@@ -113,7 +103,14 @@ namespace ColoredDamageTypesRedux {
 			list = new() {
 				Width = new(0, 1),
 			};
-			ConfigManager.WrapIt(list, ref height, GetProperty(nameof(Type)), this, order++);
+			UIModConfigHoverImage collapseButton = new(UICommon.ButtonExpandedTexture, Language.GetTextValue("tModLoader.ModConfigCollapse"));
+			collapseButton.Left.Set(readOnly ? -4f : -30f, 0f);
+			collapseButton.HAlign = 1;
+			collapseButton.VAlign = 0.5f;
+			collapseButton.OnLeftClick += (_, _) => {
+				opened = false;
+			};
+			ConfigManager.WrapIt(list, ref height, GetProperty(nameof(Type)), this, order++).Item1.Append(collapseButton);
 			startHeight = height;
 			height += 30;
 			ColorObject c = new(new(typeof(DamageTypeData).GetProperty(nameof(DamageTypeData.HitColor))), data, this);
@@ -132,28 +129,82 @@ namespace ColoredDamageTypesRedux {
 				ConfigManager.WrapIt(list, ref height, variable, c, order++);
 			}
 			Append(list);
+			if (!readOnly) {
+				deleteButton = new UIModConfigHoverImage(Main.Assets.Request<Texture2D>("Images/UI/ButtonDelete"), Language.GetTextValue("tModLoader.ModConfigRemove"));
+				deleteButton.Left.Set(-4f, 0f);
+				deleteButton.Top.Set(5f, 0f);
+				deleteButton.HAlign = 1;
+				deleteButton.VAlign = 0f;
+				deleteButton.OnLeftClick += (_, _) => {
+					Type = null;
+				};
+				Append(deleteButton);
+			}
 			Left.Set(0, 0);
 			Width.Set(0, 1f);
 			this.MaxHeight.Pixels = float.PositiveInfinity;
+		}
+		public override void LeftClick(UIMouseEvent evt) {
+			if (evt.Target == this) opened = true;
+			base.LeftClick(evt);
 		}
 		public event Action<DamageClassDefinition, DamageTypeData> SetValue;
 		public void UpdateValue() => SetValue?.Invoke(Type, data);
 		public override void Update(GameTime gameTime) {
 			base.Update(gameTime);
 			float targetHeight = 0;
-			foreach (UIElement item in list) {
-				CalculatedStyle calculatedStyle = item.GetOuterDimensions();
-				targetHeight += calculatedStyle.Height;
-				//targetHeight += list.ListPadding;
-				//float bottom = calculatedStyle.ToRectangle().Bottom;
-				//if (targetHeight < bottom) targetHeight = bottom;
+			if (opened) {
+				foreach (UIElement item in list) {
+					CalculatedStyle calculatedStyle = item.GetOuterDimensions();
+					targetHeight += calculatedStyle.Height;
+					//targetHeight += list.ListPadding;
+					//float bottom = calculatedStyle.ToRectangle().Bottom;
+					//if (targetHeight < bottom) targetHeight = bottom;
+				}
+				targetHeight += startHeight + 60;
+			} else {
+				targetHeight = 32;
 			}
-			targetHeight += startHeight + 60;
 			if (Height.Pixels != targetHeight) {
 				Height.Pixels = targetHeight;
 				list.Height.Pixels = targetHeight;
 				list.Recalculate();
 				this.Recalculate();
+			}
+		}
+		public override void Draw(SpriteBatch spriteBatch) {
+			list.IgnoresMouseInteraction = !opened;
+			if (opened) {
+				base.Draw(spriteBatch);
+			} else {
+				base.DrawSelf(spriteBatch);
+				CalculatedStyle dimensions = GetDimensions();
+				float settingsWidth = dimensions.Width + 1f;
+				Color panelColor = IsMouseHovering ? UICommon.DefaultUIBlue : UICommon.DefaultUIBlue.MultiplyRGBA(new Color(180, 180, 180));
+				ConfigElement.DrawPanel2(spriteBatch, dimensions.Position(), TextureAssets.SettingsPanel.Value, settingsWidth, dimensions.Height, panelColor);
+
+				string text = type.DisplayName;
+				Vector2 size = FontAssets.MouseText.Value.MeasureString(text) * 0.8f;
+				CalculatedStyle innerDimensions = GetInnerDimensions();
+				ChatManager.DrawColorCodedStringWithShadow(
+					spriteBatch,
+					FontAssets.MouseText.Value,
+					text,
+					innerDimensions.Position() + new Vector2(8, (innerDimensions.Height - size.Y) * 0.5f + 4),
+					readOnly ? Color.Gray : Color.White,
+					0f,
+					Vector2.Zero,
+					Vector2.One * 0.8f
+				);
+				Rectangle box = dimensions.ToRectangle();
+				box.Inflate(0, -2);
+				box.Width /= 5;
+				box.X = (int)(dimensions.X + dimensions.Width) - box.Width;
+				if (!readOnly) box.X -= 30;
+				spriteBatch.Draw(TextureAssets.MagicPixel.Value, box, data.CritColor);
+				box.X -= box.Width;
+				spriteBatch.Draw(TextureAssets.MagicPixel.Value, box, data.HitColor);
+				deleteButton?.Draw(spriteBatch);
 			}
 		}
 		public class ColorBox(DamageTypeData data, bool crit) : UIElement {
@@ -167,40 +218,35 @@ namespace ColoredDamageTypesRedux {
 			}
 		}
 	}
-	public class ReadOnlyPropertyInfo(PropertyInfo realInfo) : PropertyInfo {
-		public override bool CanWrite => false;
-		public override PropertyAttributes Attributes => realInfo.Attributes;
-		public override bool CanRead => realInfo.CanRead;
-		public override Type PropertyType => realInfo.PropertyType;
-		public override Type DeclaringType => realInfo.DeclaringType;
-		public override string Name => realInfo.Name;
-		public override Type ReflectedType => realInfo.ReflectedType;
-		public override MethodInfo[] GetAccessors(bool nonPublic) {
-			return realInfo.GetAccessors(nonPublic);
+	public class DamageClassOnLeftElement : NamedDefinitionConfigElement<DamageClassDefinition> {
+		public override void OnBind() {
+			base.OnBind();
+			TextDisplayFunction = () => "";
 		}
-		public override object[] GetCustomAttributes(bool inherit) {
-			return realInfo.GetCustomAttributes(inherit);
-		}
-		public override object[] GetCustomAttributes(Type attributeType, bool inherit) {
-			return realInfo.GetCustomAttributes(attributeType, inherit);
-		}
-		public override MethodInfo GetGetMethod(bool nonPublic) {
-			return realInfo.GetGetMethod(nonPublic);
-		}
-		public override ParameterInfo[] GetIndexParameters() {
-			return realInfo.GetIndexParameters();
-		}
-		public override MethodInfo GetSetMethod(bool nonPublic) {
-			return realInfo.GetSetMethod(nonPublic);
-		}
-		public override object GetValue(object obj, BindingFlags invokeAttr, Binder binder, object[] index, CultureInfo culture) {
-			return realInfo.GetValue(obj, invokeAttr, binder, index, culture);
-		}
-		public override bool IsDefined(Type attributeType, bool inherit) {
-			return realInfo.IsDefined(attributeType, inherit);
-		}
-		public override void SetValue(object obj, object value, BindingFlags invokeAttr, Binder binder, object[] index, CultureInfo culture) {
-			realInfo.SetValue(obj, value, invokeAttr, binder, index, culture);
+		public override void Draw(SpriteBatch spriteBatch) {
+			if (opened) {
+				base.Draw(spriteBatch);
+			} else {
+				DrawSelf(spriteBatch);
+				string text = Value.DisplayName?.Trim();
+				if (text is null) {
+					text = Value.FullName;
+				} else {
+					text += $" ({Value.FullName})";
+				}
+				Vector2 size = FontAssets.MouseText.Value.MeasureString(text) * 0.8f;
+				CalculatedStyle innerDimensions = GetInnerDimensions();
+				ChatManager.DrawColorCodedStringWithShadow(
+					spriteBatch,
+					FontAssets.MouseText.Value,
+					text,
+					innerDimensions.Position() + new Vector2(8, (innerDimensions.Height - size.Y) * 0.5f + 4),
+					Color.White,
+					0f,
+					Vector2.Zero,
+					Vector2.One * 0.8f
+				);
+			}
 		}
 	}
 }
