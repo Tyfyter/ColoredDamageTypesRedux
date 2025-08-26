@@ -3,7 +3,7 @@ CopyToCustomColors: Copy to custom colors
 ColoredDamageTypesPreset: {
 	CustomColorData: Custom Colors
 	DefaultColorData: Default Colors
-	PillarsPreset: Pillars Preset
+	PillarsPreset: Pillars
 }
 
 Configs: {
@@ -49,6 +49,16 @@ Configs: {
 		ApplyToTooltips: {
 			Label: Apply To Tooltips
 			Tooltip: ""
+		}
+
+		Interpolated: {
+			Label: Interpolate
+			Tooltip: ""
+		}
+
+		InterpolationMode: {
+			Label: Interpolation Weight
+			Tooltip: Proportional <---> Equal
 		}
 	}
 
@@ -111,6 +121,11 @@ Configs: {
 
 		ReadOnly: {
 			Label: Read Only
+			Tooltip: ""
+		}
+
+		interpolationMode: {
+			Label: interpolation Mode
 			Tooltip: ""
 		}
 	}

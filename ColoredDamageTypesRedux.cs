@@ -126,6 +126,7 @@ namespace ColoredDamageTypesRedux {
 		[JsonIgnore]
 		public virtual bool ReadOnly => true;
 		public bool interpolated = true;
+		public float interpolationMode = 0;
 		public DamageClassDefinition[] priorityOrder = [];
 		[JsonConverter(typeof(DictionaryConverter<DamageClassDefinition, DamageTypeData>))]
 		public Dictionary<DamageClassDefinition, DamageTypeData> ColorSet = [];
@@ -148,16 +149,15 @@ namespace ColoredDamageTypesRedux {
 			if (interpolated) {
 				Vector4 total = Vector4.Zero;
 				Vector2 sl = Vector2.Zero;
-				int count = 0;
+				float count = 0;
 				foreach (DamageClass type in new DamageClassList()) {
-					if (damageClass.CountsAsClass(type)) {
-						if (GetColor(type, crit) is Color color) {
-							total += color.ToVector4();
-							Vector3 hsl = Main.rgbToHsl(color);
-							sl.X += hsl.Y;
-							sl.Y += hsl.Z;
-							count++;
-						}
+					float weight = GetInterpolationWeight(damageClass, type);
+					if (weight > 0 && GetColor(type, crit) is Color color) {
+						total += color.ToVector4() * weight;
+						Vector3 hsl = Main.rgbToHsl(color) * weight;
+						sl.X += hsl.Y;
+						sl.Y += hsl.Z;
+						count += weight;
 					}
 				}
 				if (count > 0) {
@@ -172,6 +172,9 @@ namespace ColoredDamageTypesRedux {
 				if (parent is not null && GetColor(parent.DamageClass, crit) is Color color) return color;
 			}
 			return null;
+		}
+		public float GetInterpolationWeight(DamageClass @for, DamageClass type) {
+			return float.Lerp(@for.GetModifierInheritance(type).damageInheritance, @for.CountsAsClass(type).ToInt(), interpolationMode);
 		}
 		public void Load(Mod mod) {
 			Mod = mod;
@@ -255,7 +258,6 @@ namespace ColoredDamageTypesRedux {
 					Value = serializer.Deserialize<ColoredDamageTypesOptions>(new JsonTextReader(new StringReader(writer.ToString())));
 				}
 				Value.selectedColorSet = null;
-				needsRefresh = true;
 				return Value;
 			}
 		}
@@ -269,19 +271,30 @@ namespace ColoredDamageTypesRedux {
 				}
 			}
 		}
-		public bool Interpolated {
-			get => SelectedColorSet.interpolated;
-			set {
-				if (SelectedColorSet.interpolated != value) {
-					ChangedValue.SelectedColorSet.interpolated = value;
-				}
-			}
-		}
 		public ColorDataDefinition SelectedPreset {
 			get => Value.selectedPreset;
 			set {
 				if (Value.selectedPreset != value) {
 					ChangedValue.selectedPreset = value;
+					needsRefresh = true;
+				}
+			}
+		}
+		public bool Interpolated {
+			get => SelectedColorSet.interpolated;
+			set {
+				if (SelectedColorSet.interpolated != value) {
+					ChangedValue.SelectedColorSet.interpolated = value;
+					needsRefresh = true;
+				}
+			}
+		}
+		[Increment(0.02f)]
+		public float InterpolationMode {
+			get => SelectedColorSet.interpolationMode;
+			set {
+				if (SelectedColorSet.interpolationMode != value) {
+					ChangedValue.SelectedColorSet.interpolationMode = value;
 				}
 			}
 		}
@@ -295,13 +308,13 @@ namespace ColoredDamageTypesRedux {
 				}
 			}
 		}
-		PropertyFieldWrapper GetProperty(string name) => new(GetType().GetProperty(name).WithCanWrite(MemberInfo.CanWrite));
+		PropertyFieldWrapper GetProperty(string name) => new(GetType().GetProperty(name).WithCanWrite(!SelectedColorSet.ReadOnly));
 		protected void SetupList() {
 			if (ValueChanged) Value.SelectedColorSet.ValidatePriorityOrder();
 			list.Clear();
 			int index = 0;
-			ConfigManager.WrapIt(list, ref height, GetProperty(nameof(ApplyToTooltips)), this, index++);
-			ConfigManager.WrapIt(list, ref height, GetProperty(nameof(SelectedPreset)), this, index++);
+			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(ApplyToTooltips))), this, index++);
+			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(SelectedPreset))), this, index++);
 			foreach (KeyValuePair<DamageClassDefinition, DamageTypeData> color in Value.SelectedColorSet.ColorSet) {
 				ColorsElement colorsElement = new(color.Key, color.Value, Value.SelectedColorSet.ReadOnly);
 				colorsElement.Top.Pixels += height;
@@ -311,6 +324,7 @@ namespace ColoredDamageTypesRedux {
 				if (!SelectedColorSet.ReadOnly) colorsElement.SetValue += (@class, colors) => {
 					ChangedValue.SelectedColorSet.ColorSet.Remove(origKey);
 					if (@class is not null && colors is not null) ChangedValue.SelectedColorSet.ColorSet.Add(@class, colors);
+					else needsRefresh = true;
 					SelectedColorSet.ValidatePriorityOrder();
 				};
 				index++;
@@ -325,6 +339,7 @@ namespace ColoredDamageTypesRedux {
 					if (!SelectedColorSet.ColorSet.ContainsKey(key)) {
 						ChangedValue.SelectedColorSet.ColorSet.Add(key, new());
 					}
+					needsRefresh = true;
 				};
 				list.Add(addButton);
 				index++;
@@ -333,6 +348,8 @@ namespace ColoredDamageTypesRedux {
 			if (!Interpolated) {
 				PropertyFieldWrapper memberInfo = GetProperty(nameof(PriorityOrder));
 				ConfigManager.WrapIt(list, ref height, memberInfo, this, index++);
+			} else {
+				ConfigManager.WrapIt(list, ref height, GetProperty(nameof(InterpolationMode)), this, index++);
 			}
 			if (SelectedColorSet.ReadOnly) {
 				UIButton<LocalizedText> copyButton = new(Language.GetOrRegister($"Mods.{nameof(ColoredDamageTypesRedux)}.CopyToCustomColors"));
@@ -359,7 +376,12 @@ namespace ColoredDamageTypesRedux {
 			}
 		}
 		public override void Update(GameTime gameTime) {
-			if (needsRefresh.TrySet(false)) SetupList();
+			if (needsRefresh.TrySet(false)) {
+				HashSet<DamageClassDefinition> opened = [];
+				foreach (ColorsElement item in list._items.TryCast<ColorsElement>()) if (item.opened) opened.Add(item.Type);
+				SetupList();
+				foreach (ColorsElement item in list._items.TryCast<ColorsElement>()) item.opened = opened.Contains(item.Type);
+			}
 			base.Update(gameTime);
 			float targetHeight = 0;
 			foreach (UIElement item in list) {
