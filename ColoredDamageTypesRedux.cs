@@ -11,6 +11,8 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.RegularExpressions;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -59,8 +61,19 @@ namespace ColoredDamageTypesRedux {
 		}
 		public static Color GetColor(NPC.HitInfo hit) => ColoredDamageTypesReduxConfig.SelectedColorSet.GetFinalColor(hit.DamageType, hit.Crit)
 			?? (hit.Crit ? CombatText.DamagedHostileCrit : CombatText.DamagedHostile);
+		// for DevHelper
+		static string DevHelpBrokenReason {
+			get {
+#if DEBUG
+				return "Mod was last built in DEBUG configuration";
+#else
+				return null;
+#endif
+			}
+		}
 	}
 	public class CDTGlobalItem : GlobalItem {
+		static readonly Regex csoRegex = new("^([\\d+]+) (?:\\(\\[c\\/([\\da-f]{6}):[\\d+]+\\]\\))?", RegexOptions.Compiled);
 		public override void ModifyTooltips(Item item, List<TooltipLine> tooltips) {
 			if (ColoredDamageTypesReduxConfig.Instance.options.applyToTooltips) {
 				for (int i = 0; i < tooltips.Count; i++) {
@@ -69,6 +82,15 @@ namespace ColoredDamageTypesRedux {
 					ColorData colorSet = ColoredDamageTypesReduxConfig.SelectedColorSet;
 					if (colorSet.GetFinalColor(item.DamageType, false) is Color hitColor && colorSet.GetFinalColor(item.DamageType, true) is Color critColor) {
 						line.OverrideColor = Color.Lerp(hitColor, critColor, 0.5f);
+						if (ColoredDamageTypesReduxConfig.Instance.options.CSOCompatActive) {
+							line.Text = csoRegex.Replace(line.Text, match => {
+								string value = match.Value;
+								Group critText = match.Groups[2];
+								if (critText.Success) value = value.Replace(critText.Value, critColor.Hex3());
+								value = $"[c/{hitColor.Hex3()}:{match.Groups[1].Value}]" + value[match.Groups[1].Length..];
+								return value;
+							});
+						}
 					}
 				}
 			}
@@ -109,8 +131,19 @@ namespace ColoredDamageTypesRedux {
 				return selectedColorSet;
 			}
 		}
+		[JsonIgnore]
+		static bool? _csoEnabled;
+		[JsonIgnore]
+		public static bool CSOEnabled => _csoEnabled ??= ModLoader.HasMod("CritRework");
+		[JsonIgnore]
+		public bool CSOCompatActive => csoCompat && CSOEnabled;
+
 		[DefaultValue(true)]
 		public bool applyToTooltips = true;
+		[DefaultValue(0.5f)]
+		public float tooltipCritness = 0.5f;
+		[DefaultValue(true)]
+		public bool csoCompat = true;
 		public ColorDataDefinition selectedPreset = new(nameof(ColoredDamageTypesRedux), nameof(DefaultColorData));
 		public CustomColorData CustomColors = new();
 	}
@@ -268,6 +301,23 @@ namespace ColoredDamageTypesRedux {
 			set {
 				if (Value.applyToTooltips != value) {
 					ChangedValue.applyToTooltips = value;
+					needsRefresh = true;
+				}
+			}
+		}
+		public float TooltipCritness {
+			get => Value.tooltipCritness;
+			set {
+				if (Value.tooltipCritness != value) {
+					ChangedValue.tooltipCritness = value;
+				}
+			}
+		}
+		public bool CSOCompat {
+			get => Value.csoCompat;
+			set {
+				if (Value.csoCompat != value) {
+					ChangedValue.csoCompat = value;
 				}
 			}
 		}
@@ -314,6 +364,8 @@ namespace ColoredDamageTypesRedux {
 			list.Clear();
 			int index = 0;
 			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(ApplyToTooltips))), this, index++);
+			if (ApplyToTooltips) ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(TooltipCritness))), this, index++);
+			if (ApplyToTooltips && ColoredDamageTypesOptions.CSOEnabled) ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(CSOCompat))), this, index++);
 			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(SelectedPreset))), this, index++);
 			foreach (KeyValuePair<DamageClassDefinition, DamageTypeData> color in Value.SelectedColorSet.ColorSet) {
 				ColorsElement colorsElement = new(color.Key, color.Value, Value.SelectedColorSet.ReadOnly);

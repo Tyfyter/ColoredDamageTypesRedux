@@ -38,6 +38,16 @@ Configs: {
 			Label: selected Preset
 			Tooltip: ""
 		}
+
+		tooltipCritness: {
+			Label: tooltip Critness
+			Tooltip: ""
+		}
+
+		csoCompat: {
+			Label: Critical Strikes Overhaul Integration
+			Tooltip: ""
+		}
 	}
 
 	ColoredDamageTypesOptionsConfigElement: {
@@ -51,6 +61,11 @@ Configs: {
 			Tooltip: ""
 		}
 
+		TooltipCritness: {
+			Label: Tooltip Color
+			Tooltip: Normal Hit <---> Critical Hit
+		}
+
 		Interpolated: {
 			Label: Interpolate
 			Tooltip: ""
@@ -59,6 +74,11 @@ Configs: {
 		InterpolationMode: {
 			Label: Interpolation Weight
 			Tooltip: Proportional <---> Equal
+		}
+
+		CSOCompat: {
+			Label: Critical Strikes Overhaul Integration
+			Tooltip: With this enabled, tooltips will use the damage type's normal and critical hit colors for items' normal and critical hit damage respectively.
 		}
 	}
 
