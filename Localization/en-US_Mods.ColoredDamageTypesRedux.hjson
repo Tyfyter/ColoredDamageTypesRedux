@@ -4,6 +4,8 @@ ColoredDamageTypesPreset: {
 	CustomColorData: Custom Colors
 	DefaultColorData: Default Colors
 	PillarsPreset: Pillars
+	CopyOwnColorsPreset: Use Normal Colors
+	HideDamageNumbersPreset: Hide Damage Numbers
 }
 
 Configs: {
@@ -46,6 +48,11 @@ Configs: {
 
 		csoCompat: {
 			Label: Critical Strikes Overhaul Integration
+			Tooltip: ""
+		}
+
+		isRemoteColors: {
+			Label: is Remote Colors
 			Tooltip: ""
 		}
 	}
@@ -191,4 +198,13 @@ Configs: {
 	}
 
 	CustomColorData.Tooltip: ""
+
+	OtherPlayersColorsConfig: {
+		DisplayName: Other Players' Damage Numbers
+
+		options: {
+			Label: options
+			Tooltip: ""
+		}
+	}
 }

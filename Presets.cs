@@ -30,62 +30,13 @@ namespace ColoredDamageTypesRedux {
 			interpolated = false;
 		}
 	}
-	[Autoload(false)]
-	public class ExternalColorData : ColorData {
-		string name;
-		public override string Name => name;
-		public ExternalColorData(Mod mod, string name, Dictionary<string, (Color hitColor, Color critColor)> colors) {
-			Mod = mod;
-			this.name = name;
-			foreach (KeyValuePair<string, (Color hitColor, Color critColor)> item in colors) {
-				ColorSet[new(item.Key)] = new(item.Value.hitColor, item.Value.critColor);
-			}
-		}
+	public class CopyOwnColorsPreset : ColorData {
+		public override bool ShowInOwnColors => false;
+		public override bool IsSpecial => true;
+		public override Color? GetColor(DamageClass type, bool crit) => ColoredDamageTypesReduxConfig.SelectedColorSet.GetColor(type, crit);
 	}
-	[CustomModConfigItem(typeof(NamedDefinitionConfigElement<ColorDataDefinition>))]
-	[TypeConverter(typeof(ToFromStringConverter<ColorDataDefinition>))]
-	[JsonConverter(typeof(JsonConverter))]
-	public class ColorDataDefinition : EntityDefinition, IEquatable<ColorDataDefinition>, INamedDefinition, IEnumerableDefinition<ColorDataDefinition> {
-		public static readonly Func<TagCompound, ColorDataDefinition> DESERIALIZER = Load;
-		public override bool IsUnloaded => ColorData is null;
-		public string FullName => $"{Mod}/{Name}";
-		public const string custom_colors = $"{nameof(ColoredDamageTypesRedux)}/{nameof(CustomColorData)}";
-		public ColorData ColorData => FullName == custom_colors ? ColoredDamageTypesReduxConfig.Instance.options.CustomColors
-			: (ColoredDamageTypesRedux.loadedColorDatas.TryGetValue(FullName, out ColorData data) ? data : null);
-		public override int Type => -1;
-		public ColorDataDefinition() : base() { }
-		public ColorDataDefinition(string key) : base(key) { }
-		public ColorDataDefinition(string mod, string name) : base(mod, name) { }
-		public static ColorDataDefinition FromString(string s) => new(s);
-		public static ColorDataDefinition Load(TagCompound tag) => new(tag.GetString("mod"), tag.GetString("name"));
-		public bool Equals(ColorDataDefinition other) => other?.FullName == FullName;
-		public override string DisplayName => IsUnloaded ? Language.GetTextValue("Mods.ModLoader.Unloaded") : ColorData.DisplayName.Value;
-		public override bool Equals(object obj) => Equals(obj as ColorDataDefinition);
-		public override int GetHashCode() => FullName.GetHashCode();
-		public class JsonConverter : Newtonsoft.Json.JsonConverter {
-			public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer) {
-				return FromString(reader.Value.ToString());
-			}
-
-			public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer) {
-				switch (writer.WriteState) {
-					case WriteState.Property:
-					case WriteState.Array:
-					writer.WriteValue(value.ToString());
-					break;
-					default:
-					writer.WriteRaw(value.ToString());
-					break;
-				}
-			}
-			public override bool CanConvert(Type objectType) => objectType == typeof(ColorDataDefinition);
-		}
-		public static IEnumerable<ColorDataDefinition> GetOptions() {
-			yield return new(custom_colors);
-			foreach (string id in ColoredDamageTypesRedux.loadedColorDatas.Keys) {
-				yield return new(id);
-			}
-		}
-		public static bool ShowInternalName => false;
+	public class HideDamageNumbersPreset : ColorData {
+		public override bool IsSpecial => true;
+		public override Color? GetColor(DamageClass type, bool crit) => Color.Transparent;
 	}
 }
