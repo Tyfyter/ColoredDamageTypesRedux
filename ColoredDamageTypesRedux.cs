@@ -117,6 +117,12 @@ namespace ColoredDamageTypesRedux {
 		public static ColoredDamageTypesReduxConfig Instance;
 		public static ColorData SelectedColorSet => Instance.options.SelectedColorSet;
 		public ColoredDamageTypesOptions options = new();
+		public override void OnLoaded() {
+			if (options is null) {
+				options = new();
+				SaveChanges(this);
+			}
+		}
 		public override void OnChanged() {
 			if (ColoredDamageTypesRedux.loadedColorDatas.Count > 0) SelectedColorSet.ValidatePriorityOrder();
 		}
