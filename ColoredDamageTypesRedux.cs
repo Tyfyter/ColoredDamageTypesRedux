@@ -24,6 +24,7 @@ using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Config.UI;
 using Terraria.ModLoader.UI;
 using Terraria.UI;
+using tModPorter;
 
 namespace ColoredDamageTypesRedux {
 	public class ColoredDamageTypesRedux : Mod {
@@ -116,6 +117,7 @@ namespace ColoredDamageTypesRedux {
 		public override ConfigScope Mode => ConfigScope.ClientSide;
 		public static ColoredDamageTypesReduxConfig Instance;
 		public static ColorData SelectedColorSet => Instance.options.SelectedColorSet;
+		[DefaultValue(typeof(ColoredDamageTypesOptions), "false")]
 		public ColoredDamageTypesOptions options = new();
 		public override void OnLoaded() {
 			if (options is null) {
@@ -126,6 +128,14 @@ namespace ColoredDamageTypesRedux {
 		public override void OnChanged() {
 			if (ColoredDamageTypesRedux.loadedColorDatas.Count > 0) SelectedColorSet.ValidatePriorityOrder();
 		}
+		/*static ColoredDamageTypesReduxConfig() {
+			Directory.CreateDirectory(ConfigManager.ModConfigPath);
+			string filename = nameof(ColoredDamageTypesRedux) + "_" + nameof(ColoredDamageTypesReduxConfig) + ".json";
+			string path = Path.Combine(ConfigManager.ModConfigPath, filename);
+			if (File.Exists(path)) return;
+			string json = "{\"options\":{\"selectedPreset\": \"ColoredDamageTypesRedux/DefaultColorData\"}}";
+			File.WriteAllText(path, json);
+		}*/
 	}
 
 	public class OtherPlayersColorsConfig : ModConfig {
@@ -144,6 +154,14 @@ namespace ColoredDamageTypesRedux {
 			options.isRemoteColors = true;
 			if (ColoredDamageTypesRedux.loadedColorDatas.Count > 0) SelectedColorSet.ValidatePriorityOrder();
 		}
+		/*static OtherPlayersColorsConfig() {
+			Directory.CreateDirectory(ConfigManager.ModConfigPath);
+			string filename = nameof(ColoredDamageTypesRedux) + "_" + nameof(OtherPlayersColorsConfig) + ".json";
+			string path = Path.Combine(ConfigManager.ModConfigPath, filename);
+			if (File.Exists(path)) return;
+			string json = "{\"options\":{\"isRemoteColors\": true, \"selectedPreset\": \"ColoredDamageTypesRedux/CopyOwnColorsPreset\"}}";
+			File.WriteAllText(path, json);
+		}*/
 	}
 	[CustomModConfigItem(typeof(ColoredDamageTypesOptionsConfigElement))]
 	public class ColoredDamageTypesOptions(bool isRemoteColors = false) {
