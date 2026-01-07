@@ -105,8 +105,9 @@ namespace ColoredDamageTypesRedux {
 			};
 			UIModConfigHoverImage collapseButton = new(UICommon.ButtonExpandedTexture, Language.GetTextValue("tModLoader.ModConfigCollapse"));
 			collapseButton.Left.Set(readOnly ? -4f : -30f, 0f);
+			collapseButton.Top.Set(5, 0f);
 			collapseButton.HAlign = 1;
-			collapseButton.VAlign = 0.5f;
+			collapseButton.VAlign = 0f;
 			collapseButton.OnLeftClick += (_, _) => {
 				opened = false;
 			};

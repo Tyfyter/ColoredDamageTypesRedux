@@ -299,10 +299,10 @@ namespace ColoredDamageTypesRedux {
 			list.Clear();
 			int index = 0;
 			if (Value.optionsID == OptionsID.Tooltip) {
-				ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(TooltipCritness))), this, index++);
-				if (ColoredDamageTypesOptions.CSOEnabled) ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(CSOCompat))), this, index++);
+				ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(TooltipCritness))), this, index++, index: index);
+				if (ColoredDamageTypesOptions.CSOEnabled) ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(CSOCompat))), this, index++, index: index);
 			}
-			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(SelectedPreset))), this, index++);
+			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(SelectedPreset))), this, index++, index: index);
 			foreach (KeyValuePair<DamageClassDefinition, DamageTypeData> color in Value.SelectedColorSet.ColorSet) {
 				ColorsElement colorsElement = new(color.Key, color.Value, Value.SelectedColorSet.ReadOnly);
 				colorsElement.Top.Pixels += height;
@@ -333,12 +333,12 @@ namespace ColoredDamageTypesRedux {
 				index++;
 			}
 			if (SelectedColorSet.ShowExtrapolationData) {
-				ConfigManager.WrapIt(list, ref height, GetProperty(nameof(Interpolated)), this, index++);
+				ConfigManager.WrapIt(list, ref height, GetProperty(nameof(Interpolated)), this, index++, index: index);
 				if (!Interpolated) {
 					PropertyFieldWrapper memberInfo = GetProperty(nameof(PriorityOrder));
-					ConfigManager.WrapIt(list, ref height, memberInfo, this, index++);
+					ConfigManager.WrapIt(list, ref height, memberInfo, this, index++, index: index);
 				} else {
-					ConfigManager.WrapIt(list, ref height, GetProperty(nameof(InterpolationMode)), this, index++);
+					ConfigManager.WrapIt(list, ref height, GetProperty(nameof(InterpolationMode)), this, index++, index: index);
 				}
 			}
 			if (SelectedColorSet.ReadOnly && !SelectedColorSet.IsSpecial) {
