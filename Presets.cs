@@ -31,11 +31,12 @@ namespace ColoredDamageTypesRedux {
 		}
 	}
 	public class CopyOwnColorsPreset : ColorData {
-		public override bool ShowInOwnColors => false;
+		public override bool ShowIn(OptionsID optionsID) => optionsID != OptionsID.CombatText;
 		public override bool IsSpecial => true;
 		public override Color? GetColor(DamageClass type, bool crit) => ColoredDamageTypesReduxConfig.SelectedColorSet.GetColor(type, crit);
 	}
 	public class HideDamageNumbersPreset : ColorData {
+		public override bool ShowIn(OptionsID optionsID) => optionsID != OptionsID.Tooltip;
 		public override bool IsSpecial => true;
 		public override Color? GetColor(DamageClass type, bool crit) => Color.Transparent;
 	}

@@ -25,8 +25,6 @@ namespace ColoredDamageTypesRedux {
 		[JsonIgnore]
 		public virtual bool ReadOnly => true;
 		[JsonIgnore]
-		public virtual bool ShowInOwnColors => true;
-		[JsonIgnore]
 		public virtual bool ShowExtrapolationData => !IsSpecial;
 		[JsonIgnore]
 		public virtual bool IsSpecial => false;
@@ -34,6 +32,7 @@ namespace ColoredDamageTypesRedux {
 		public virtual (bool interpolated, float interpolationMode) InterpolationData => (interpolated, interpolationMode);
 		[JsonIgnore]
 		public virtual DamageClassDefinition[] PriorityOrder => priorityOrder;
+		public virtual bool ShowIn(OptionsID optionsID) => true;
 		public bool interpolated = true;
 		public float interpolationMode = 0;
 		public DamageClassDefinition[] priorityOrder = [];

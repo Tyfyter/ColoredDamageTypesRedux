@@ -80,22 +80,20 @@ namespace ColoredDamageTypesRedux {
 	public class CDTGlobalItem : GlobalItem {
 		static readonly Regex csoRegex = new("^([\\d+]+) (?:\\(\\[c\\/([\\da-f]{6}):[\\d+]+\\]\\))?", RegexOptions.Compiled);
 		public override void ModifyTooltips(Item item, List<TooltipLine> tooltips) {
-			if (ColoredDamageTypesReduxConfig.Instance.options.applyToTooltips) {
-				for (int i = 0; i < tooltips.Count; i++) {
-					TooltipLine line = tooltips[i];
-					if (line.FullName != "Terraria/Damage") continue;
-					ColorData colorSet = ColoredDamageTypesReduxConfig.SelectedColorSet;
-					if (colorSet.GetFinalColor(item.DamageType, false) is Color hitColor && colorSet.GetFinalColor(item.DamageType, true) is Color critColor) {
-						line.OverrideColor = Color.Lerp(hitColor, critColor, 0.5f);
-						if (ColoredDamageTypesReduxConfig.Instance.options.CSOCompatActive) {
-							line.Text = csoRegex.Replace(line.Text, match => {
-								string value = match.Value;
-								Group critText = match.Groups[2];
-								if (critText.Success) value = value.Replace(critText.Value, critColor.Hex3());
-								value = $"[c/{hitColor.Hex3()}:{match.Groups[1].Value}]" + value[match.Groups[1].Length..];
-								return value;
-							});
-						}
+			for (int i = 0; i < tooltips.Count; i++) {
+				TooltipLine line = tooltips[i];
+				if (line.FullName != "Terraria/Damage") continue;
+				ColorData colorSet = TooltipColorsConfig.SelectedColorSet;
+				if (colorSet.GetFinalColor(item.DamageType, false) is Color hitColor && colorSet.GetFinalColor(item.DamageType, true) is Color critColor) {
+					line.OverrideColor = Color.Lerp(hitColor, critColor, 0.5f);
+					if (TooltipColorsConfig.Instance.options.CSOCompatActive) {
+						line.Text = csoRegex.Replace(line.Text, match => {
+							string value = match.Value;
+							Group critText = match.Groups[2];
+							if (critText.Success) value = value.Replace(critText.Value, critColor.Hex3());
+							value = $"[c/{hitColor.Hex3()}:{match.Groups[1].Value}]" + value[match.Groups[1].Length..];
+							return value;
+						});
 					}
 				}
 			}
@@ -117,7 +115,6 @@ namespace ColoredDamageTypesRedux {
 		public override ConfigScope Mode => ConfigScope.ClientSide;
 		public static ColoredDamageTypesReduxConfig Instance;
 		public static ColorData SelectedColorSet => Instance.options.SelectedColorSet;
-		[DefaultValue(typeof(ColoredDamageTypesOptions), "false")]
 		public ColoredDamageTypesOptions options = new();
 		public override void OnLoaded() {
 			if (options is null) {
@@ -128,43 +125,43 @@ namespace ColoredDamageTypesRedux {
 		public override void OnChanged() {
 			if (ColoredDamageTypesRedux.loadedColorDatas.Count > 0) SelectedColorSet.ValidatePriorityOrder();
 		}
-		/*static ColoredDamageTypesReduxConfig() {
-			Directory.CreateDirectory(ConfigManager.ModConfigPath);
-			string filename = nameof(ColoredDamageTypesRedux) + "_" + nameof(ColoredDamageTypesReduxConfig) + ".json";
-			string path = Path.Combine(ConfigManager.ModConfigPath, filename);
-			if (File.Exists(path)) return;
-			string json = "{\"options\":{\"selectedPreset\": \"ColoredDamageTypesRedux/DefaultColorData\"}}";
-			File.WriteAllText(path, json);
-		}*/
+	}
+
+	public class TooltipColorsConfig : ModConfig {
+		public override ConfigScope Mode => ConfigScope.ClientSide;
+		public static TooltipColorsConfig Instance;
+		public static ColorData SelectedColorSet => Instance.options.SelectedColorSet;
+		public ColoredDamageTypesOptions options = new(OptionsID.Tooltip);
+		public override void OnLoaded() {
+			if (options is null) {
+				options = new(OptionsID.Tooltip);
+				SaveChanges(this);
+			}
+		}
+		public override void OnChanged() {
+			options.optionsID = OptionsID.Tooltip;
+			if (ColoredDamageTypesRedux.loadedColorDatas.Count > 0) SelectedColorSet.ValidatePriorityOrder();
+		}
 	}
 
 	public class OtherPlayersColorsConfig : ModConfig {
 		public override ConfigScope Mode => ConfigScope.ClientSide;
 		public static OtherPlayersColorsConfig Instance;
 		public static ColorData SelectedColorSet => Instance.options.SelectedColorSet;
-		[DefaultValue(typeof(ColoredDamageTypesOptions), "true")]
-		public ColoredDamageTypesOptions options = new(true);
+		public ColoredDamageTypesOptions options = new(OptionsID.OtherCombatText);
 		public override void OnLoaded() {
 			if (options is null) {
-				options = new(true);
+				options = new(OptionsID.OtherCombatText);
 				SaveChanges(this);
 			}
 		}
 		public override void OnChanged() {
-			options.isRemoteColors = true;
+			options.optionsID = OptionsID.OtherCombatText;
 			if (ColoredDamageTypesRedux.loadedColorDatas.Count > 0) SelectedColorSet.ValidatePriorityOrder();
 		}
-		/*static OtherPlayersColorsConfig() {
-			Directory.CreateDirectory(ConfigManager.ModConfigPath);
-			string filename = nameof(ColoredDamageTypesRedux) + "_" + nameof(OtherPlayersColorsConfig) + ".json";
-			string path = Path.Combine(ConfigManager.ModConfigPath, filename);
-			if (File.Exists(path)) return;
-			string json = "{\"options\":{\"isRemoteColors\": true, \"selectedPreset\": \"ColoredDamageTypesRedux/CopyOwnColorsPreset\"}}";
-			File.WriteAllText(path, json);
-		}*/
 	}
 	[CustomModConfigItem(typeof(ColoredDamageTypesOptionsConfigElement))]
-	public class ColoredDamageTypesOptions(bool isRemoteColors = false) {
+	public class ColoredDamageTypesOptions(OptionsID optionsID = OptionsID.CombatText) {
 		[JsonIgnore]
 		internal ColorData selectedColorSet;
 		[JsonIgnore]
@@ -177,7 +174,7 @@ namespace ColoredDamageTypesRedux {
 				return selectedColorSet;
 			}
 		}
-		public bool isRemoteColors = isRemoteColors;
+		public OptionsID optionsID = optionsID;
 		[JsonIgnore]
 		static bool? _csoEnabled;
 		[JsonIgnore]
@@ -185,13 +182,15 @@ namespace ColoredDamageTypesRedux {
 		[JsonIgnore]
 		public bool CSOCompatActive => csoCompat && CSOEnabled;
 
-		[DefaultValue(true)]
-		public bool applyToTooltips = true;
 		[DefaultValue(0.5f)]
 		public float tooltipCritness = 0.5f;
 		[DefaultValue(true)]
 		public bool csoCompat = true;
-		public ColorDataDefinition selectedPreset = new(nameof(ColoredDamageTypesRedux), isRemoteColors ? nameof(CopyOwnColorsPreset) : nameof(DefaultColorData));
+		public ColorDataDefinition selectedPreset = new(nameof(ColoredDamageTypesRedux), optionsID switch {
+			OptionsID.OtherCombatText => nameof(CopyOwnColorsPreset),
+			OptionsID.Tooltip => nameof(CopyOwnColorsPreset),
+			_ => nameof(DefaultColorData)
+		});
 		public CustomColorData CustomColors = new();
 	}
 	public class DamageTypeData(Color hitColor, Color critColor) {
@@ -223,12 +222,12 @@ namespace ColoredDamageTypesRedux {
 		public ColoredDamageTypesOptions ChangedValue {
 			get {
 				if (changed.TrySet(true)) {
-					bool isRemoteColors = Value.isRemoteColors;
+					OptionsID optionsID = Value.optionsID;
 					JsonSerializer serializer = JsonSerializer.CreateDefault();
 					StringWriter writer = new();
 					serializer.Serialize(writer, Value);
 					Value = serializer.Deserialize<ColoredDamageTypesOptions>(new JsonTextReader(new StringReader(writer.ToString())));
-					Value.isRemoteColors = isRemoteColors;
+					Value.optionsID = optionsID;
 				}
 				Value.selectedColorSet = null;
 				return Value;
@@ -236,15 +235,6 @@ namespace ColoredDamageTypesRedux {
 		}
 		UIList list;
 		public ColorData SelectedColorSet => Value.SelectedColorSet;
-		public bool ApplyToTooltips {
-			get => Value.applyToTooltips;
-			set {
-				if (Value.applyToTooltips != value) {
-					ChangedValue.applyToTooltips = value;
-					needsRefresh = true;
-				}
-			}
-		}
 		public float TooltipCritness {
 			get => Value.tooltipCritness;
 			set {
@@ -273,7 +263,7 @@ namespace ColoredDamageTypesRedux {
 		}
 		public bool IsValidPreset(ColorDataDefinition newType) {
 			if (newType.Equals(SelectedPreset)) return true;
-			return Value.isRemoteColors || newType.ColorData.ShowInOwnColors;
+			return newType.ColorData.ShowIn(Value.optionsID);
 		}
 		public bool Interpolated {
 			get => SelectedColorSet.interpolated;
@@ -308,10 +298,9 @@ namespace ColoredDamageTypesRedux {
 			if (ValueChanged) Value.SelectedColorSet.ValidatePriorityOrder();
 			list.Clear();
 			int index = 0;
-			if (!Value.isRemoteColors) {
-				ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(ApplyToTooltips))), this, index++);
-				if (ApplyToTooltips) ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(TooltipCritness))), this, index++);
-				if (ApplyToTooltips && ColoredDamageTypesOptions.CSOEnabled) ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(CSOCompat))), this, index++);
+			if (Value.optionsID == OptionsID.Tooltip) {
+				ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(TooltipCritness))), this, index++);
+				if (ColoredDamageTypesOptions.CSOEnabled) ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(CSOCompat))), this, index++);
 			}
 			ConfigManager.WrapIt(list, ref height, new(GetType().GetProperty(nameof(SelectedPreset))), this, index++);
 			foreach (KeyValuePair<DamageClassDefinition, DamageTypeData> color in Value.SelectedColorSet.ColorSet) {
@@ -408,5 +397,10 @@ namespace ColoredDamageTypesRedux {
 				element.Draw(spriteBatch);
 			}
 		}
+	}
+	public enum OptionsID {
+		CombatText,
+		Tooltip,
+		OtherCombatText,
 	}
 }

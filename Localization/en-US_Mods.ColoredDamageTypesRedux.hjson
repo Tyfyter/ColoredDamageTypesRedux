@@ -51,20 +51,15 @@ Configs: {
 			Tooltip: ""
 		}
 
-		isRemoteColors: {
-			Label: is Remote Colors
-			Tooltip: ""
+		optionsID: {
+			Label: Options ID
+			Tooltip: If you're seeing this, please file a bug report
 		}
 	}
 
 	ColoredDamageTypesOptionsConfigElement: {
 		SelectedPreset: {
 			Label: Selected Preset
-			Tooltip: ""
-		}
-
-		ApplyToTooltips: {
-			Label: Apply To Tooltips
 			Tooltip: ""
 		}
 
@@ -152,7 +147,7 @@ Configs: {
 		}
 
 		interpolationMode: {
-			Label: interpolation Mode
+			Label: Interpolation Mode
 			Tooltip: ""
 		}
 	}
@@ -201,6 +196,33 @@ Configs: {
 
 	OtherPlayersColorsConfig: {
 		DisplayName: Other Players' Damage Numbers
+
+		options: {
+			Label: options
+			Tooltip: ""
+		}
+	}
+
+	OptionsID: {
+		Tooltip: {
+			$parentVal: ""
+			Label: Tooltip
+			Tooltip: ""
+		}
+
+		CombatText: {
+			Label: Combat Text
+			Tooltip: ""
+		}
+
+		OtherCombatText: {
+			Label: Other Combat Text
+			Tooltip: ""
+		}
+	}
+
+	TooltipColorsConfig: {
+		DisplayName: Tooltip Colors Config
 
 		options: {
 			Label: options
