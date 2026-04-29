@@ -1,6 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using MonoMod.Cil;
 using Newtonsoft.Json.Linq;
+using PegasusLib;
 using PegasusLib.Config;
 using ReLogic.Content;
 using System;
@@ -16,6 +19,7 @@ using Terraria.GameContent.UI.States;
 using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.Localization;
+using Terraria.ModLoader;
 using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Config.UI;
 using Terraria.ModLoader.UI;
@@ -24,7 +28,41 @@ using Terraria.UI.Chat;
 using static ColoredDamageTypesRedux.ColoredDamageTypesOptionsConfigElement;
 
 namespace ColoredDamageTypesRedux {
-	public class ColorsElement : UIElement {
+	interface ICallOnReleaseOver {
+		void LeftMouseUpOver(UIMouseEvent evt);
+	}
+	public class ColorsElement : UIElement, ICallOnReleaseOver {
+		internal static void Patch() {
+			On_Main.CursorColor += _On_Main_CursorColor;
+			IL_UserInterface.Update_Inner += _IL_UserInterface_Update_Inner;
+		}
+
+		static Color? draggingColor = null;
+		static void _On_Main_CursorColor(On_Main.orig_CursorColor orig) {
+			orig();
+			if (draggingColor.HasValue && !Main.mouseLeft && Main.mouseLeftRelease) draggingColor = null;
+			if (draggingColor.HasValue) {
+				Main.cursorColor = draggingColor.Value;
+				if (Main.LocalPlayer is not null) Main.LocalPlayer.hasRainbowCursor = false;
+			}
+		}
+		static void _IL_UserInterface_Update_Inner(ILContext il) {
+			ILCursor c = new(il);
+			FieldInfo LeftMouse = typeof(UserInterface).GetField("LeftMouse", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+			Type InputPointerCache = LeftMouse.FieldType;
+			c.EmitLdarg2();
+			c.EmitLdarg0();
+			c.EmitLdfld(LeftMouse);
+			c.EmitLdfld(InputPointerCache.GetField("LastDown"));
+			c.EmitLdarg0();
+			c.EmitLdfld(LeftMouse);
+			c.EmitLdfld(InputPointerCache.GetField("WasDown"));
+			c.EmitDelegate((UIElement mouseElement, UIElement lastDown, bool wasDown) => {
+				if (!(Main.mouseLeft && Main.hasFocus) && wasDown && mouseElement is ICallOnReleaseOver callOnReleaseOver) {
+					callOnReleaseOver.LeftMouseUpOver(new UIMouseEvent(lastDown, Main.MouseScreen));
+				}
+			});
+		}
 		public class ColorObject(PropertyFieldWrapper memberInfo, object item, ColorsElement colorsElement) {
 			public Color current = (Color)memberInfo.GetValue(item);
 			[LabelKey("$Config.Color.Red.Label")]
@@ -82,7 +120,7 @@ namespace ColoredDamageTypesRedux {
 			int id = newType.Type;
 			if (!CDTRExtensions.ClassSubstituteForColor.IndexInRange(id) || CDTRExtensions.ClassSubstituteForColor[id] is not null) return false;
 			UIElement parent = this;
-			while (parent is not ColoredDamageTypesOptionsConfigElement && (parent = parent.Parent) is not null);
+			while (parent is not ColoredDamageTypesOptionsConfigElement && (parent = parent.Parent) is not null) ;
 			if (parent is ColoredDamageTypesOptionsConfigElement source) {
 				return !source.SelectedColorSet.ColorSet.ContainsKey(newType);
 			}
@@ -197,25 +235,67 @@ namespace ColoredDamageTypesRedux {
 					Vector2.Zero,
 					Vector2.One * 0.8f
 				);
-				Rectangle box = dimensions.ToRectangle();
-				box.Inflate(0, -2);
-				box.Width /= 5;
-				box.X = (int)(dimensions.X + dimensions.Width) - box.Width;
-				if (!readOnly) box.X -= 30;
-				spriteBatch.Draw(TextureAssets.MagicPixel.Value, box, data.CritColor);
-				box.X -= box.Width;
-				spriteBatch.Draw(TextureAssets.MagicPixel.Value, box, data.HitColor);
+				GetClosedColorBoxes(out Rectangle normal, out Rectangle crit);
+				spriteBatch.Draw(TextureAssets.MagicPixel.Value, normal, data.HitColor);
+				spriteBatch.Draw(TextureAssets.MagicPixel.Value, crit, data.CritColor);
 				deleteButton?.Draw(spriteBatch);
 			}
 		}
-		public class ColorBox(DamageTypeData data, bool crit) : UIElement {
+		public void GetClosedColorBoxes(out Rectangle normal, out Rectangle crit) {
+			CalculatedStyle dimensions = GetDimensions();
+			Rectangle box = dimensions.ToRectangle();
+			box.Inflate(0, -2);
+			box.Width /= 5;
+			box.X = (int)(dimensions.X + dimensions.Width) - box.Width;
+			if (!readOnly) box.X -= 30;
+			crit = box;
+			box.X -= box.Width;
+			normal = box;
+		}
+		public override void LeftMouseDown(UIMouseEvent evt) {
+			if (!opened) {
+				GetClosedColorBoxes(out Rectangle normal, out Rectangle crit);
+				if (normal.Contains(Main.MouseScreen)) {
+					draggingColor = data.HitColor;
+				} else if (crit.Contains(Main.MouseScreen)) {
+					draggingColor = data.CritColor;
+				}
+			}
+		}
+		public void LeftMouseUpOver(UIMouseEvent evt) {
+			if (!opened && draggingColor.HasValue) {
+				GetClosedColorBoxes(out Rectangle normal, out Rectangle crit);
+				if (normal.Contains(Main.MouseScreen)) {
+					data.HitColor = draggingColor.Value;
+				} else if (crit.Contains(Main.MouseScreen)) {
+					data.CritColor = draggingColor.Value;
+				}
+				draggingColor = null;
+			}
+		}
+		public class ColorBox(DamageTypeData data, bool crit) : UIElement, ICallOnReleaseOver {
 			public override void OnInitialize() {
 				Width.Set(0, 0.5f);
 				Height.Set(30, 0f);
 				HAlign = 1;
 			}
-			public override void Draw(SpriteBatch spriteBatch) {
-				spriteBatch.Draw(TextureAssets.MagicPixel.Value, GetOuterDimensions().ToRectangle(), crit ? data.CritColor : data.HitColor);
+			public Color Color {
+				get => crit ? data.CritColor : data.HitColor;
+				set {
+					if (crit) {
+						data.CritColor = value;
+					} else {
+						data.HitColor = value;
+					}
+				}
+			}
+			public override void Draw(SpriteBatch spriteBatch) => spriteBatch.Draw(TextureAssets.MagicPixel.Value, GetOuterDimensions().ToRectangle(), Color);
+			public override void LeftMouseDown(UIMouseEvent evt) {
+				draggingColor = Color;
+			}
+			public void LeftMouseUpOver(UIMouseEvent evt) {
+				if (draggingColor.HasValue && draggingColor.Value != Color) Color = draggingColor.Value;
+				draggingColor = null;
 			}
 		}
 	}

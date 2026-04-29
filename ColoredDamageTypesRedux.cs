@@ -35,6 +35,7 @@ namespace ColoredDamageTypesRedux {
 		}
 		public override void Load() {
 			IL_NPC.StrikeNPC_HitInfo_bool_bool += IL_NPC_StrikeNPC_HitInfo_bool_bool;
+			ColorsElement.Patch();
 		}
 		static void IL_NPC_StrikeNPC_HitInfo_bool_bool(ILContext il) {
 			ILCursor c = new(il);
