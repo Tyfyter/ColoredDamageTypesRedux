@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
@@ -29,6 +30,9 @@ using tModPorter;
 namespace ColoredDamageTypesRedux {
 	public class ColoredDamageTypesRedux : Mod {
 		public static Dictionary<string, ColorData> loadedColorDatas = [];
+		ColoredDamageTypesRedux() : base() {
+			AutoModCall.PreLoadAutoModCalls(this);
+		}
 		public override void Load() {
 			IL_NPC.StrikeNPC_HitInfo_bool_bool += IL_NPC_StrikeNPC_HitInfo_bool_bool;
 		}
@@ -44,22 +48,7 @@ namespace ColoredDamageTypesRedux {
 			c.EmitLdarg(2);
 			c.EmitDelegate(static (Color _, NPC.HitInfo hit, bool fromNet) => GetColor(hit, fromNet));
 		}
-		public enum Calls {
-			AddPreset,
-			AddToPreset
-		}
-		public override object Call(params object[] args) {
-			switch (Enum.Parse<Calls>(args[0].ToString())) {
-				case Calls.AddPreset:
-				ExternalColorData externalColorData = new((Mod)args[1], (string)args[2], (Dictionary<string, (Color hitColor, Color critColor)>)args[3]);
-				loadedColorDatas.Add(externalColorData.FullName, externalColorData);
-				break;
-				case Calls.AddToPreset:
-				loadedColorDatas[(string)args[1]].ColorSet[new DamageClassDefinition((string)args[2])] = new((Color)args[3], (Color)args[4]);
-				break;
-			}
-			return null;
-		}
+		public override object Call(params object[] args) => AutoModCall.DoCall(this, args);
 		public static Color GetColor(NPC.HitInfo hit, bool fromNet) {
 			Color color = (fromNet ? OtherPlayersColorsConfig.SelectedColorSet : ColoredDamageTypesReduxConfig.SelectedColorSet).GetFinalColor(hit.DamageType, hit.Crit)
 			?? (hit.Crit ? CombatText.DamagedHostileCrit : CombatText.DamagedHostile);
